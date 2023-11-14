@@ -29,11 +29,11 @@
 
 ## Microtask Queue
 - Microtask queue is of two parts again - nextTick queue and promise queue.
-- `nextTick` has the CBs that are associated with the process.nextTick.
+- `nextTick` has the CBs that are associated with process.nextTick.
 - Promise callbacks have the CBs that are associated with Promises.
 
 ## Queues in libuv
-- Timer queue, I/O queue, check queue, and close queue are a part of libuv.
+- Timer queue, I/O queue, check queue, close queue are a part of libuv.
 - Microtask queue is not a part of libuv.
 
 ## Execution Order
@@ -41,4 +41,32 @@
 - Only when the call stack is empty, the event loop comes into the picture.
 - Order of Execution of Callbacks (priority order of queues):
   1. Microtask queues are given top priority, in which next tick queues --> promise queues.
-  2. CBs in Timer
+  2. CBs in Timer Queues are executed one by one.
+  3. CBs in Microtask queues are executed after the execution of every callback in Timer Queues. Again next tick queues --> promise queues.
+  4. CBs in I/O queue are executed.
+  5. CBs in Microtask queues are executed after the execution of callbacks in I/O Queues. Again next tick queues --> promise queues.
+  6. CBs in Check Queue are executed.
+  7. CBs in Microtask queues are executed after the execution of every callback in Check Queues. Again next tick queues --> promise queues.
+  8. CBs in Close Queue are executed.
+  9. CBs in Microtask queues are executed after the execution of callbacks in Close Queues. Again next tick queues --> promise queues.
+  10. If more CBs are left over, then these 9 steps go on loop.
+
+## Timer Queue
+- Timer Queue is not exactly a queue but a min heap data structure.
+- **SetTimeOut:**
+  - `setTimeout` is used to execute a function once after a specified delay (in milliseconds).
+  - It takes two arguments: a function or code to execute and a delay (in milliseconds).
+  - The code or function will be executed only once after the specified delay.
+- **SetInterval:**
+  - `setInterval` is used to repeatedly execute a function at a specified interval.
+  - It also takes two arguments: a function or code to execute and an interval (in milliseconds).
+  - The code or function will be executed repeatedly, with each execution occurring at the specified interval until explicitly cleared.
+
+## Timeout and I/O Async Method Execution Order
+- When running a Timeout of 0ms and I/O async method, the order of execution is unpredictable. Why?
+  - [Source Reference](https://chromium.googlesource.com/chromium/blink/+/master/Source/core/frame/DOMTimer.cpp#93)
+  - It depends on how the minimum timeout is set, here it is 1ms.
+  - If I/O takes 0.5ms, then I/O takes priority over `setTimeout(0ms)`. If I/O takes 1ms, then `setTimeout(0ms)` takes priority over I/O.
+
+## Reference
+- [Node.js Event Loop, Timers, and nextTick](https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick)
